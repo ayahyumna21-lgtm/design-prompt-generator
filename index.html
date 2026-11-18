@@ -1,0 +1,745 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Copy, 
+  Palette, 
+  Layout, 
+  Image as ImageIcon, 
+  Type, 
+  Maximize, 
+  CheckCircle2, 
+  Droplets, 
+  AlignLeft, 
+  AlignCenter, 
+  AlignRight,
+  ListPlus,
+  StickyNote,
+  Sparkles,
+  Layers,
+  ChevronRight,
+  RotateCcw,
+  BookmarkCheck,
+  Trash2,
+  Globe,
+  Wand2
+} from 'lucide-react';
+
+const App = () => {
+  // Navigation & Mode State
+  const [activeTab, setActiveTab] = useState('generator');
+  const [promptLang, setPromptLang] = useState('id'); // 'id' (Brief Desainer) | 'en' (AI Generator)
+
+  // Form States
+  const [category, setCategory] = useState('poster');
+  const [title, setTitle] = useState('');
+  const [tagline, setTagline] = useState('');
+  const [textAlignment, setTextAlignment] = useState('Tengah');
+  const [visualDesc, setVisualDesc] = useState('');
+  const [additionalImages, setAdditionalImages] = useState('');
+  const [customSize, setCustomSize] = useState('');
+  const [style, setStyle] = useState('Modern & Minimalist');
+  
+  // Color State
+  const [primaryColor, setPrimaryColor] = useState('Putih');
+  const [secondaryColor, setSecondaryColor] = useState('Emas');
+  const [colorMood, setColorMood] = useState('Vibrant / Full Color');
+  
+  // Product & Notes
+  const [productList, setProductList] = useState('');
+  const [extraNotes, setExtraNotes] = useState('');
+  
+  // Output & Saved Projects
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [savedProjects, setSavedProjects] = useState([]);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const categories = {
+    poster: { name: 'Poster', defaultSize: 'A3 (29.7 x 42 cm)', enName: 'Promotional Poster' },
+    brosur: { name: 'Brosur', defaultSize: 'A4 Lipat 3', enName: 'Tri-fold Brochure Layout' },
+    banner: { name: 'Banner', defaultSize: '60 x 160 cm', enName: 'Vertical Standing X-Banner' },
+    flayer: { name: 'Flayer', defaultSize: 'A5', enName: 'Marketing Flyer' },
+    stiker: { name: 'Stiker', defaultSize: '5x5 cm', enName: 'Die-cut Sticker Design' },
+    typo_sticker: { name: 'Sticker Typo', defaultSize: 'Custom Die-cut', enName: 'Typography Die-cut Sticker, vector art, white border' }
+  };
+
+  const styles = [
+    'Modern & Minimalist',
+    'Vintage / Retro',
+    'Futuristic / Cyberpunk',
+    'Elegant & Luxury',
+    'Playful & Colorful',
+    'Corporate & Professional',
+    'Bauhaus / Swiss Style',
+    'Typography Focused'
+  ];
+
+  const moodOptions = [
+    'Vibrant / Full Color',
+    'Monochromatic',
+    'Pastel / Soft',
+    'Dark / Moody',
+    'High Contrast',
+    'Warm / Earthy'
+  ];
+
+  const presetTemplates = [
+    {
+      name: 'Promo Kedai Kopi',
+      category: 'poster',
+      title: 'KOPI SUSU AREN',
+      tagline: 'Nikmati Harimu dengan Segelas Semangat',
+      textAlignment: 'Tengah',
+      style: 'Modern & Minimalist',
+      primaryColor: 'Cokelat Tua / Krem',
+      secondaryColor: 'Oranye Hangat',
+      colorMood: 'Warm / Earthy',
+      visualDesc: 'Ilustrasi gelas es kopi susu dengan percikan susu dan biji kopi melayang di udara',
+      additionalImages: 'Logo halal, ikon promo diskon 50%',
+      productList: '1. Kopi Susu Gula Aren\n2. Caramel Macchiato\n3. Americano Ice',
+      extraNotes: 'Gunakan font bold yang mudah dibaca dari jarak jauh'
+    },
+    {
+      name: 'Sticker Typografi Quotes',
+      category: 'typo_sticker',
+      title: 'KERJA KERAS BAGAI KUDA',
+      tagline: 'Tetap Santai Walau Deadline Menghantui',
+      textAlignment: 'Tengah',
+      style: 'Playful & Colorful',
+      primaryColor: 'Kuning Cerah',
+      secondaryColor: 'Hitam & Merah',
+      colorMood: 'High Contrast',
+      visualDesc: 'Tipografi bergaya retro melengkung (wavy text) dengan outline tebal dan garis tepi putih (die-cut)',
+      additionalImages: 'Elemen petir kecil dan bintang kartun',
+      productList: '',
+      extraNotes: 'Pastikan teks menjadi fokus utama, background transparan/putih'
+    },
+    {
+      name: 'Banner Event Musik',
+      category: 'banner',
+      title: 'SOUND FEST 2026',
+      tagline: 'Malam Puncak Musik & Seni Lokal',
+      textAlignment: 'Kiri',
+      style: 'Futuristic / Cyberpunk',
+      primaryColor: 'Biru Dongker Gelap',
+      secondaryColor: 'Neon Magenta & Cyan',
+      colorMood: 'Dark / Moody',
+      visualDesc: 'Siluet panggung konser dengan sorotan lampu laser neon dan gelombang suara abstrak',
+      additionalImages: 'Area kosong di bagian bawah untuk deretan logo sponsor',
+      productList: 'Guest Star: Band Indie Lokal, DJ Set, Art Exhibition',
+      extraNotes: 'Berikan efek glow pada judul utama'
+    }
+  ];
+
+  useEffect(() => {
+    generatePrompt();
+  }, [category, title, tagline, textAlignment, visualDesc, additionalImages, customSize, style, primaryColor, secondaryColor, colorMood, productList, extraNotes, promptLang]);
+
+  const generatePrompt = () => {
+    const sizeText = customSize || categories[category].defaultSize;
+    
+    if (promptLang === 'en') {
+      const alignMap = { 'Kiri': 'left-aligned', 'Tengah': 'centered', 'Kanan': 'right-aligned' };
+      const enPrompt = `Create a professional ${categories[category].enName} design (${sizeText}). 
+Style: ${style}. 
+Main Headline Text: "${title || 'YOUR TITLE HERE'}" (${alignMap[textAlignment] || 'centered'}, bold typography). 
+${tagline ? `Secondary Subtext/Tagline: "${tagline}". ` : ''}
+Visual & Illustration: ${visualDesc || 'Clean, eye-catching commercial graphic layout'}. 
+${additionalImages ? `Additional Graphic Elements: ${additionalImages}. ` : ''}
+Color Palette: Dominant background in ${primaryColor} with ${secondaryColor} accents, overall ${colorMood} color mood. 
+${productList ? `Include structured layout space for text list: ${productList.replace(/\n/g, ', ')}. ` : ''}
+${extraNotes ? `Special Instructions: ${extraNotes}. ` : ''}
+High resolution, commercial print-ready quality, sharp details, balanced composition,Behance and Dribbble trending graphic design.`;
+      setGeneratedPrompt(enPrompt.trim());
+    } else {
+      const prompt = `
+[DRAFT DESAIN: ${category.toUpperCase()}]
+-----------------------------------------
+1. INFORMASI UTAMA
+- Judul/Headline: ${title || '-'}
+- Teks Sekunder/Tagline: ${tagline || '-'}
+- Peletakan Teks: Sejajar ${textAlignment}
+
+2. SPESIFIKASI VISUAL
+- Ukuran: ${sizeText}
+- Gaya Desain: ${style}
+- Deskripsi Gambar: ${visualDesc || 'Menyesuaikan tema'}
+- Detail Gambar Tambahan: ${additionalImages || '-'}
+
+3. SKEMA WARNA
+- Warna Utama (Background): ${primaryColor}
+- Warna Sekunder (Aksen/Full Color): ${secondaryColor}
+- Mood Warna: ${colorMood}
+
+4. DETAIL KONTEN & LAINNYA
+- Daftar Produk/Isi: ${productList || '-'}
+- Catatan Tambahan: ${extraNotes || '-'}
+
+-----------------------------------------
+Generated by PromptStudio
+      `.trim();
+      setGeneratedPrompt(prompt);
+    }
+  };
+
+  const handleCopy = () => {
+    const el = document.createElement('textarea');
+    el.value = generatedPrompt;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleReset = () => {
+    setTitle('');
+    setTagline('');
+    setVisualDesc('');
+    setAdditionalImages('');
+    setCustomSize('');
+    setProductList('');
+    setExtraNotes('');
+  };
+
+  const handleSaveProject = () => {
+    const newProject = {
+      id: Date.now(),
+      date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      categoryName: categories[category].name,
+      title: title || `Draft ${categories[category].name}`,
+      prompt: generatedPrompt,
+      raw: {
+        category, title, tagline, textAlignment, visualDesc, additionalImages, customSize, style, primaryColor, secondaryColor, colorMood, productList, extraNotes
+      }
+    };
+    setSavedProjects([newProject, ...savedProjects]);
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 2000);
+  };
+
+  const loadTemplate = (tpl) => {
+    setCategory(tpl.category);
+    setTitle(tpl.title);
+    setTagline(tpl.tagline);
+    setTextAlignment(tpl.textAlignment);
+    setStyle(tpl.style);
+    setPrimaryColor(tpl.primaryColor);
+    setSecondaryColor(tpl.secondaryColor);
+    setColorMood(tpl.colorMood);
+    setVisualDesc(tpl.visualDesc);
+    setAdditionalImages(tpl.additionalImages);
+    setProductList(tpl.productList);
+    setExtraNotes(tpl.extraNotes);
+    setActiveTab('generator');
+  };
+
+  return (
+    <div className="flex min-h-screen bg-[#F8FAFC] font-sans text-slate-800">
+      
+      {/* Sidebar - Desktop Only */}
+      <aside className="hidden lg:flex w-72 bg-white border-r border-slate-200 flex-col sticky top-0 h-screen">
+        <div className="p-8">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="bg-indigo-600 p-2 rounded-xl shadow-md shadow-indigo-200">
+              <Sparkles className="text-white w-6 h-6" />
+            </div>
+            <span className="font-bold text-xl tracking-tight text-slate-900">PromptStudio</span>
+          </div>
+          
+          <nav className="space-y-2">
+            <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-4">Workspace</div>
+            <button 
+              onClick={() => setActiveTab('generator')}
+              className={`flex items-center gap-3 w-full p-3 rounded-xl font-semibold transition-all ${
+                activeTab === 'generator' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              <Layout className="w-5 h-5" /> Design Generator
+            </button>
+            <button 
+              onClick={() => setActiveTab('projects')}
+              className={`flex items-center justify-between w-full p-3 rounded-xl font-medium transition-all ${
+                activeTab === 'projects' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Layers className="w-5 h-5" /> Tersimpan
+              </div>
+              {savedProjects.length > 0 && (
+                <span className="bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  {savedProjects.length}
+                </span>
+              )}
+            </button>
+            <button 
+              onClick={() => setActiveTab('templates')}
+              className={`flex items-center gap-3 w-full p-3 rounded-xl font-medium transition-all ${
+                activeTab === 'templates' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              <Wand2 className="w-5 h-5" /> Preset Template
+            </button>
+          </nav>
+        </div>
+        
+        <div className="mt-auto p-8 border-t border-slate-100">
+           <div className="bg-slate-900 rounded-2xl p-4 text-white">
+             <p className="text-xs text-indigo-400 font-semibold mb-1">Mode Dual-Output</p>
+             <p className="text-xs text-slate-300 leading-relaxed">Mendukung format Brief Desainer (ID) & AI Image Prompt (EN).</p>
+           </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0">
+        
+        {/* Top Header */}
+        <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 sticky top-0 z-10">
+          <div className="flex items-center gap-2 text-slate-500 text-sm">
+            <span className="font-bold text-indigo-600 lg:hidden mr-2">PromptStudio</span>
+            <span className="hidden sm:inline">Workspace</span> 
+            <ChevronRight className="w-4 h-4 hidden sm:inline" /> 
+            <span className="font-semibold text-slate-900 capitalize">
+              {activeTab === 'generator' ? 'Design Generator' : activeTab === 'projects' ? 'Proyek Tersimpan' : 'Preset Template'}
+            </span>
+          </div>
+
+          {/* Mobile Nav & Reset Action */}
+          <div className="flex items-center gap-2">
+            <div className="flex lg:hidden bg-slate-100 p-1 rounded-xl mr-2">
+              <button 
+                onClick={() => setActiveTab('generator')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${activeTab === 'generator' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}
+              >
+                Buat
+              </button>
+              <button 
+                onClick={() => setActiveTab('templates')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${activeTab === 'templates' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}
+              >
+                Preset
+              </button>
+              <button 
+                onClick={() => setActiveTab('projects')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold ${activeTab === 'projects' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}
+              >
+                Simpan ({savedProjects.length})
+              </button>
+            </div>
+
+            {activeTab === 'generator' && (
+              <button 
+                onClick={handleReset}
+                title="Reset Form"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-600 hover:text-red-600 bg-slate-100 hover:bg-red-50 rounded-xl transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Reset</span>
+              </button>
+            )}
+          </div>
+        </header>
+
+        {/* Scrollable Content */}
+        <div className="p-4 md:p-8 overflow-auto">
+          <div className="max-w-6xl mx-auto">
+            
+            {activeTab === 'templates' && (
+              <div>
+                <div className="mb-8">
+                  <h2 className="text-2xl font-extrabold text-slate-900">Template Siap Pakai</h2>
+                  <p className="text-slate-500 text-sm mt-1">Pilih contoh di bawah untuk mengisi formulir secara otomatis dan memodifikasinya.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {presetTemplates.map((tpl, idx) => (
+                    <div key={idx} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+                      <div>
+                        <span className="inline-block px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full mb-3 uppercase">
+                          {categories[tpl.category].name}
+                        </span>
+                        <h3 className="font-bold text-lg text-slate-900 mb-1">{tpl.name}</h3>
+                        <p className="text-xs text-slate-500 mb-4">Judul: "{tpl.title}"</p>
+                        <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl mb-6 line-clamp-3">
+                          {tpl.visualDesc}
+                        </p>
+                      </div>
+                      <button 
+                        onClick={() => loadTemplate(tpl)}
+                        className="w-full py-3 bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold rounded-xl transition-colors"
+                      >
+                        Gunakan Template Ini
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'projects' && (
+              <div>
+                <div className="mb-8">
+                  <h2 className="text-2xl font-extrabold text-slate-900">Proyek Tersimpan</h2>
+                  <p className="text-slate-500 text-sm mt-1">Daftar brief prompt yang Anda simpan pada sesi ini.</p>
+                </div>
+                {savedProjects.length === 0 ? (
+                  <div className="bg-white rounded-3xl p-12 text-center border border-slate-200">
+                    <Layers className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    <h3 className="font-bold text-slate-700">Belum Ada Prompt Tersimpan</h3>
+                    <p className="text-xs text-slate-400 mt-1 mb-4">Klik tombol "Simpan" pada panel hasil prompt untuk menyimpannya di sini.</p>
+                    <button 
+                      onClick={() => setActiveTab('generator')}
+                      className="px-5 py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl"
+                    >
+                      Kembali ke Generator
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {savedProjects.map((proj) => (
+                      <div key={proj.id} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full">
+                              {proj.categoryName}
+                            </span>
+                            <span className="text-xs text-slate-400">{proj.date}</span>
+                          </div>
+                          <h3 className="font-bold text-lg text-slate-900 mb-3">{proj.title}</h3>
+                          <pre className="text-xs font-mono bg-slate-900 text-slate-300 p-4 rounded-2xl overflow-auto max-h-40 mb-4 whitespace-pre-wrap">
+                            {proj.prompt}
+                          </pre>
+                        </div>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => loadTemplate(proj.raw)}
+                            className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-colors"
+                          >
+                            Edit Ulang
+                          </button>
+                          <button 
+                            onClick={() => setSavedProjects(savedProjects.filter(p => p.id !== proj.id))}
+                            className="p-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'generator' && (
+              <>
+                <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Design Requirement Builder</h2>
+                    <p className="text-slate-500 text-sm mt-1">Isi formulir di bawah untuk menyusun instruksi desain yang lengkap.</p>
+                  </div>
+                  <button 
+                    onClick={() => setActiveTab('templates')}
+                    className="self-start sm:self-auto flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-4 py-2.5 rounded-xl transition-colors"
+                  >
+                    <Wand2 className="w-4 h-4" /> Coba Preset Contoh
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                  
+                  {/* Left Column: Form */}
+                  <div className="xl:col-span-7 space-y-6">
+                    
+                    {/* 1. Media Configuration */}
+                    <div className="bg-white rounded-3xl p-6 md:p-7 shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+                          <Layout className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <h3 className="font-bold text-lg">1. Konfigurasi Media & Ukuran</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+                        {Object.keys(categories).map((key) => (
+                          <button
+                            key={key}
+                            onClick={() => { setCategory(key); setCustomSize(''); }}
+                            className={`py-3 px-2 rounded-2xl border text-xs font-bold transition-all flex flex-col items-center gap-1 ${
+                              category === key 
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-200' 
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'
+                            }`}
+                          >
+                            <span>{categories[key].name}</span>
+                            <span className={`text-[10px] font-normal ${category === key ? 'text-indigo-200' : 'text-slate-400'}`}>
+                              {categories[key].defaultSize}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                      
+                      <div className="relative">
+                        <Maximize className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                        <input
+                          type="text"
+                          value={customSize}
+                          onChange={(e) => setCustomSize(e.target.value)}
+                          placeholder={`Ukuran Custom (Kosongkan untuk default: ${categories[category].defaultSize})`}
+                          className="w-full pl-10 pr-4 py-3 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-medium"
+                        />
+                      </div>
+                    </div>
+
+                    {/* 2. Content & Typography */}
+                    <div className="bg-white rounded-3xl p-6 md:p-7 shadow-sm border border-slate-200">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
+                          <Type className="w-5 h-5 text-amber-600" />
+                        </div>
+                        <h3 className="font-bold text-lg">2. Judul & Tata Letak Teks</h3>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-500 uppercase mb-1.5 block">Nama / Judul Pokok Desain</label>
+                          <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="Contoh: GRAND OPENING CAFE & RESTO"
+                            className="w-full p-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 text-sm font-semibold"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-500 uppercase mb-1.5 block">Teks Sekunder / Tagline</label>
+                          <input
+                            type="text"
+                            value={tagline}
+                            onChange={(e) => setTagline(e.target.value)}
+                            placeholder="Contoh: Diskon 50% Semua Menu Khusus Hari Ini!"
+                            className="w-full p-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
+                          />
+                        </div>
+                        
+                        <div className="pt-1">
+                           <span className="text-[11px] font-bold text-slate-500 uppercase block mb-2.5">Peletakan Teks Utama</span>
+                           <div className="flex gap-2">
+                             {[
+                               { label: 'Kiri', icon: <AlignLeft className="w-4 h-4"/> },
+                               { label: 'Tengah', icon: <AlignCenter className="w-4 h-4"/> },
+                               { label: 'Kanan', icon: <AlignRight className="w-4 h-4"/> }
+                             ].map(pos => (
+                               <button
+                                 key={pos.label}
+                                 onClick={() => setTextAlignment(pos.label)}
+                                 className={`flex-1 p-3 rounded-2xl border transition-all flex items-center justify-center gap-2 text-xs font-bold ${
+                                   textAlignment === pos.label 
+                                   ? 'bg-slate-900 border-slate-900 text-white shadow-md' 
+                                   : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                                 }`}
+                               >
+                                 {pos.icon} {pos.label}
+                               </button>
+                             ))}
+                           </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 3. Style & Colors */}
+                    <div className="bg-white rounded-3xl p-6 md:p-7 shadow-sm border border-slate-200">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 bg-pink-100 rounded-xl flex items-center justify-center">
+                          <Droplets className="w-5 h-5 text-pink-600" />
+                        </div>
+                        <h3 className="font-bold text-lg">3. Gaya & Skema Warna</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-500 uppercase mb-1.5 block">Gaya Desain</label>
+                          <select 
+                            value={style}
+                            onChange={(e) => setStyle(e.target.value)}
+                            className="w-full p-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 text-sm font-bold"
+                          >
+                            {styles.map(s => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-500 uppercase mb-1.5 block">Skema / Mood Warna</label>
+                          <select 
+                            value={colorMood}
+                            onChange={(e) => setColorMood(e.target.value)}
+                            className="w-full p-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 text-sm font-bold"
+                          >
+                            {moodOptions.map(m => <option key={m} value={m}>{m}</option>)}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                           <label className="text-[11px] font-bold text-slate-500 uppercase mb-1.5 block">Warna Utama / Background</label>
+                           <input
+                            type="text"
+                            value={primaryColor}
+                            onChange={(e) => setPrimaryColor(e.target.value)}
+                            placeholder="Contoh: Biru Navy / Putih"
+                            className="w-full px-4 py-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
+                          />
+                        </div>
+                        <div>
+                           <label className="text-[11px] font-bold text-slate-500 uppercase mb-1.5 block">Warna Sekunder (Full Color)</label>
+                           <input
+                            type="text"
+                            value={secondaryColor}
+                            onChange={(e) => setSecondaryColor(e.target.value)}
+                            placeholder="Contoh: Kuning Emas & Oranye"
+                            className="w-full px-4 py-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 4. Additional Context */}
+                    <div className="bg-white rounded-3xl p-6 md:p-7 shadow-sm border border-slate-200">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                          <ImageIcon className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <h3 className="font-bold text-lg">4. Keterangan Gambar & Konten</h3>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-500 uppercase mb-1.5 block">Deskripsi Gambar Utama</label>
+                          <textarea
+                            rows="3"
+                            value={visualDesc}
+                            onChange={(e) => setVisualDesc(e.target.value)}
+                            placeholder="Jelaskan objek utama gambar (Misal: Foto burger ukuran besar dengan keju meleleh dan asap hangat)..."
+                            className="w-full p-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                          ></textarea>
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-500 uppercase mb-1.5 block">Keterangan Tambahan Gambar / Elemen</label>
+                          <input
+                            type="text"
+                            value={additionalImages}
+                            onChange={(e) => setAdditionalImages(e.target.value)}
+                            placeholder="Contoh: Tambahkan ikon media sosial, QR Code, dan badge Halal di pojok kanan"
+                            className="w-full p-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-500 uppercase mb-1.5 block">List Produk / Daftar Isi</label>
+                          <textarea
+                            rows="3"
+                            value={productList}
+                            onChange={(e) => setProductList(e.target.value)}
+                            placeholder="Tuliskan daftar produk, harga, atau poin informasi (Opsional)..."
+                            className="w-full p-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                          ></textarea>
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-bold text-slate-500 uppercase mb-1.5 block">Catatan Tambahan</label>
+                          <input
+                            type="text"
+                            value={extraNotes}
+                            onChange={(e) => setExtraNotes(e.target.value)}
+                            placeholder="Contoh: Sisakan ruang kosong di bawah untuk alamat toko"
+                            className="w-full p-3.5 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Output Sticky */}
+                  <div className="xl:col-span-5 h-fit sticky top-28">
+                    <div className="bg-slate-900 rounded-[2.5rem] p-6 md:p-8 shadow-2xl overflow-hidden relative group">
+                      {/* Decorative Elements */}
+                      <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-500/20 rounded-full blur-3xl"></div>
+                      <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl"></div>
+                      
+                      <div className="relative z-10">
+                        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                           <div>
+                             <h4 className="text-white font-bold text-xl">Hasil Prompt</h4>
+                             <p className="text-slate-400 text-xs mt-0.5">Otomatis diperbarui saat Anda mengetik</p>
+                           </div>
+                           
+                           {/* Language / Format Switcher */}
+                           <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700">
+                             <button
+                               onClick={() => setPromptLang('id')}
+                               className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                                 promptLang === 'id' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                               }`}
+                             >
+                               Brief (ID)
+                             </button>
+                             <button
+                               onClick={() => setPromptLang('en')}
+                               className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all ${
+                                 promptLang === 'en' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                               }`}
+                             >
+                               <Globe className="w-3 h-3" /> AI Prompt (EN)
+                             </button>
+                           </div>
+                        </div>
+
+                        <div className="bg-white/5 rounded-3xl p-5 border border-white/10 backdrop-blur-md">
+                          <pre className="text-slate-200 font-mono text-xs md:text-sm leading-relaxed whitespace-pre-wrap h-[420px] overflow-auto">
+                            {generatedPrompt}
+                          </pre>
+                        </div>
+
+                        <div className="flex gap-3 mt-6">
+                          <button 
+                            onClick={handleSaveProject}
+                            className="px-4 bg-white/10 hover:bg-white/20 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 text-xs"
+                            title="Simpan ke Riwayat"
+                          >
+                            <BookmarkCheck className={`w-4 h-4 ${saveSuccess ? 'text-emerald-400' : ''}`} />
+                            {saveSuccess ? 'Tersimpan' : 'Simpan'}
+                          </button>
+                          <button 
+                            onClick={handleCopy}
+                            className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/20 transition-all flex items-center justify-center gap-2 text-sm"
+                          >
+                            {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                            {copied ? 'Berhasil Disalin!' : 'Salin Prompt Sekarang'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 flex gap-4 p-4 bg-blue-50 rounded-3xl border border-blue-100">
+                      <div className="bg-blue-600 p-2 rounded-xl h-fit">
+                        <StickyNote className="text-white w-4 h-4" />
+                      </div>
+                      <div>
+                        <h5 className="font-bold text-blue-900 text-xs">Info Mode Output</h5>
+                        <p className="text-blue-700 text-[11px] mt-1 leading-relaxed">
+                          Gunakan <b>Brief (ID)</b> untuk dikirim ke desainer grafis manusia, atau pilih <b>AI Prompt (EN)</b> untuk langsung ditempel ke Midjourney, Ideogram, atau DALL-E 3.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </>
+            )}
+
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default App;
